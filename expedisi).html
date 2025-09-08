@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lacak Paket - Tracking Ekspedisi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .timeline {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .timeline::after {
+            content: '';
+            position: absolute;
+            width: 3px;
+            background-color: #e5e7eb;
+            top: 0;
+            bottom: 0;
+            left: 12px;
+            margin-left: -3px;
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 6px;
+            padding-left: 40px;
+        }
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            left: 8px;
+            background-color: #3b82f6;
+            border-radius: 50%;
+            z-index: 1;
+        }
+        .timeline-item.current::after {
+            background-color: #10b981;
+            transform: scale(1.3);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-4xl mx-auto p-6">
+        <!-- Header Section -->
+        <header class="mb-10">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800">
+                        <img src="https://i.pinimg.com/1200x/ee/fe/e0/eefee0b5d27a364fec7e42df69f19659.jpg" alt="Logo Tracking Paket dengan ikon paket dan panah melacak dalam warna biru dan hijau" class="h-12">
+                    </h2>
+                    <p class="text-gray-600 mt-2">Lacak status pengiriman paket Anda dengan mudah</p>
+                </div>
+                <div class="bg-blue-100 p-4 rounded-lg hidden md:block">
+                    <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/9a1ab720-dcfc-4629-bcc0-01736557c275.png" alt="Ilustrasi karakter kurir mengantarkan paket dengan sepeda motor" class="h-20">
+                </div>
+            </div>
+        </header>
+
+        <!-- Tracking Form Section -->
+        <section class="bg-white rounded-xl shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Cek Status Pengiriman</h2>
+            <form id="trackingForm" class="space-y-4">
+                <div>
+                    <label for="resi" class="block text-sm font-medium text-gray-700 mb-1">Nomor Resi</label>
+                    <input type="text" id="resi" name="resi" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+                           placeholder="Masukkan nomor resi pengiriman" required>
+                </div>
+                
+                <div>
+                    <label for="ekspedisi" class="block text-sm font-medium text-gray-700 mb-1">Pilih Ekspedisi</label>
+                    <select id="ekspedisi" name="ekspedisi" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        <option value="jne">JNE</option>
+                        <option value="jnt">J&T Express</option>
+                        <option value="indah">Indah Cargo</option>
+                    </select>
+                </div>
+                
+                <button type="submit" 
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-200 flex items-center justify-center">
+                    <i class="fas fa-search mr-2"></i> Lacak Paket
+                </button>
+            </form>
+        </section>
+
+        <!-- Results Section (Initially Hidden) -->
+        <section id="resultsSection" class="hidden bg-white rounded-xl shadow-md p-6 mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold text-gray-800">Status Pengiriman</h2>
+                <span id="statusBadge" class="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    Dalam Perjalanan
+                </span>
+            </div>
+            
+            <!-- Package Info -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="text-sm text-gray-500">Nomor Resi</p>
+                    <p id="resiInfo" class="font-medium">1234567890</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="text-sm text-gray-500">Layanan</p>
+                    <p id="layananInfo" class="font-medium">REGULER</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="text-sm text-gray-500">Estimasi Sampai</p>
+                    <p id="estimasiInfo" class="font-medium">15 Jan 2024</p>
+                </div>
+            </div>
+            
+            <!-- Shipping Progress Bar -->
+            <div class="w-full bg-gray-200 rounded-full h-2.5 mb-8">
+                <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 50%"></div>
+            </div>
+            
+            <!-- Timeline -->
+            <div class="timeline">
+                <div class="timeline-item current">
+                    <div class="bg-green-50 p-4 rounded-lg mb-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-medium text-gray-800">Paket dalam perjalanan ke tujuan</h3>
+                                <p class="text-sm text-gray-600">Paket sedang dalam perjalanan menuju kota tujuan</p>
+                            </div>
+                            <div class="text-sm text-gray-500">Today, 14:30</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-medium text-gray-800">Paket keluar dari gudang transit</h3>
+                                <p class="text-sm text-gray-600">Paket telah keluar dari gudang transit Jakarta</p>
+                            </div>
+                            <div class="text-sm text-gray-500">14 Jan 2024, 09:15</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-medium text-gray-800">Paket tiba di gudang transit</h3>
+                                <p class="text-sm text-gray-600">Paket tiba di gudang transit Jakarta</p>
+                            </div>
+                            <div class="text-sm text-gray-500">13 Jan 2024, 18:45</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-medium text-gray-800">Paket dikirim oleh penjual</h3>
+                                <p class="text-sm text-gray-600">Penjual telah mengirimkan paket ke agen pengiriman</p>
+                            </div>
+                            <div class="text-sm text-gray-500">12 Jan 2024, 14:20</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Error Section (Initially Hidden) -->
+        <section id="errorSection" class="hidden bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
+            <div class="flex items-center">
+                <div class="mr-4 text-red-500">
+                    <i class="fas fa-exclamation-circle text-2xl"></i>
+                </div>
+                <div>
+                    <h3 class="font-medium text-lg text-red-800">Nomor Resi Tidak Ditemukan</h3>
+                    <p class="text-red-600">Nomor resi yang Anda masukkan tidak valid atau belum terdaftar di sistem kami. Mohon periksa kembali nomor resi Anda.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Courier Info Section -->
+        <section class="bg-white rounded-xl shadow-md p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Layanan Ekspedisi</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="border rounded-lg p-4 hover:border-blue-500 transition duration-200">
+                    <div class="flex items-center mb-3">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/ce4eda54-4c07-4c4c-a554-33c640cd3128.png" alt="Logo J&T Express dengan warna merah dan tulisan J&T putih" class="h-8 mr-3">
+                        <h3 class="font-medium">J&T Express</h3>
+                    </div>
+                    <p class="text-sm text-gray-600">Layanan pengiriman cepat dengan jaringan luas di seluruh Indonesia.</p>
+                </div>
+                <div class="border rounded-lg p-4 hover:border-blue-500 transition duration-200">
+                    <div class="flex items-center mb-3">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/1b29b661-7c34-4a08-80b9-88d5c32a5267.png" alt="Logo JNE dengan warna oranye dan hitam" class="h-8 mr-3">
+                        <h3 class="font-medium">JNE</h3>
+                    </div>
+                    <p class="text-sm text-gray-600">Perusahaan kurir terbesar di Indonesia dengan berbagai pilihan layanan.</p>
+                </div>
+                <div class="border rounded-lg p-4 hover:border-blue-500 transition duration-200">
+                    <div class="flex items-center mb-3">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/6a213558-8e9c-40b7-a0e6-dda8a1d1f114.png" alt="Logo Indah Cargo dengan warna biru dan hijau" class="h-8 mr-3">
+                        <h3 class="font-medium">Indah Cargo</h3>
+                    </div>
+                    <p class="text-sm text-gray-600">Spesialis pengiriman barang besar dan berat ke seluruh Indonesia.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer class="bg-gray-100 py-6 mt-10">
+        <div class="max-w-4xl mx-auto px-6 text-center text-gray-600 text-sm">
+            <p>© 2024 Tracking Paket. Semua hak dilindungi.</p>
+            <p class="mt-2">Lacak status pengiriman paket dari berbagai ekspedisi terkemuka di Indonesia.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('trackingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const resi = document.getElementById('resi').value;
+            const ekspedisi = document.getElementById('ekspedisi').value;
+            
+            // Simulasikan response dari API
+            setTimeout(() => {
+                // Untuk demo, kita akan selalu menampilkan hasil
+                // Dalam implementasi nyata, ini akan diganti dengan API call
+                
+                if (resi.length < 8) {
+                    // Show error if resi is too short (demo purpose)
+                    document.getElementById('resultsSection').classList.add('hidden');
+                    document.getElementById('errorSection').classList.remove('hidden');
+                } else {
+                    // Show tracking results
+                    document.getElementById('resultsSection').classList.remove('hidden');
+                    document.getElementById('errorSection').classList.add('hidden');
+                    
+                    // Update info based on courier
+                    document.getElementById('resiInfo').textContent = resi;
+                    document.getElementById('layananInfo').textContent = ekspedisi.toUpperCase();
+                    
+                    // Calculate random estimation (demo)
+                    const today = new Date();
+                    const estimateDate = new Date(today);
+                    estimateDate.setDate(today.getDate() + Math.floor(Math.random() * 5) + 2);
+                    document.getElementById('estimasiInfo').textContent = estimateDate.toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                    });
+                    
+                    // Set random progress (demo)
+                    const progress = Math.floor(Math.random() * 60) + 20;
+                    document.getElementById('progressBar').style.width = progress + '%';
+                    
+                    // Set status based on progress
+                    if (progress > 80) {
+                        document.getElementById('statusBadge').textContent = 'Hampir Sampai';
+                        document.getElementById('statusBadge').className = 'px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800';
+                    } else if (progress > 50) {
+                        document.getElementById('statusBadge').textContent = 'Dalam Perjalanan';
+                        document.getElementById('statusBadge').className = 'px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800';
+                    } else {
+                        document.getElementById('statusBadge').textContent = 'Baru Dikirim';
+                        document.getElementById('statusBadge').className = 'px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800';
+                    }
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
+
